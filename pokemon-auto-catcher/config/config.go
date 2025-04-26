@@ -17,11 +17,12 @@ type ScreenPosition struct {
 }
 
 type Config struct {
-	ConfigFileName                  string
-	GameWindowPosition              ScreenPosition
-	RepelImageRectangle             image.Rectangle
-	NoBattleReferenceImageRectangle image.Rectangle
-	PokemonReferenceImageRectangle  image.Rectangle
+	ConfigFileName                   string
+	GameWindowPosition               ScreenPosition
+	RepelImageRectangle              image.Rectangle
+	NoBattleReferenceImageRectangle  image.Rectangle
+	PokemonReferenceImageRectangle   image.Rectangle
+	AchievmentReferenceImaeRectangle image.Rectangle
 }
 
 func NewConfig() Config {
@@ -117,6 +118,23 @@ func (c *Config) ConfigPokemonReferenceImage() {
 	c.writeToFile()
 
 	c.saveImage("pokemon_reference.png", c.PokemonReferenceImageRectangle)
+}
+
+func (c *Config) ConfigAchievmentPopupImage() {
+	fmt.Println("Click on the upper left corner of the achievment location")
+	upperLeftCorner := GetClickPosition()
+
+	fmt.Println("Click on the bottom right corner of the achievment location")
+	bottomRightCorner := GetClickPosition()
+
+	c.AchievmentReferenceImaeRectangle = image.Rectangle{
+		Min: image.Point{X: upperLeftCorner.X, Y: upperLeftCorner.Y},
+		Max: image.Point{X: bottomRightCorner.X, Y: bottomRightCorner.Y},
+	}
+
+	c.writeToFile()
+
+	c.saveImage("achievment_reference.png", c.AchievmentReferenceImaeRectangle)
 }
 
 func (c *Config) saveImage(filename string, rec image.Rectangle) {

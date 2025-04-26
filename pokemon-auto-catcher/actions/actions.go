@@ -7,7 +7,7 @@ import (
 	"github.com/go-vgo/robotgo"
 )
 
-const walkDelay = 250 * time.Millisecond
+const walkDelay = 150 * time.Millisecond
 
 func walk(direction string) {
 	robotgo.KeyDown(direction)
@@ -44,10 +44,6 @@ func UseRepel() {
 	Press("x")
 	time.Sleep(500 * time.Millisecond)
 	Press("enter")
-	time.Sleep(500 * time.Millisecond)
-	Press("up")
-	time.Sleep(500 * time.Millisecond)
-	Press("up")
 	time.Sleep(500 * time.Millisecond)
 	Press("down")
 	time.Sleep(500 * time.Millisecond)
@@ -103,7 +99,13 @@ func ThrowPokeball() {
 	Press("x")
 	time.Sleep(500 * time.Millisecond)
 	Press("space")
-	time.Sleep(3000 * time.Millisecond)
+	time.Sleep(2000 * time.Millisecond)
+	Press("z")
+	time.Sleep(200 * time.Millisecond)
+	Press("z")
+	time.Sleep(200 * time.Millisecond)
+	Press("z")
+	time.Sleep(200 * time.Millisecond)
 }
 
 func ThrowPokeballAgain() {
@@ -119,7 +121,13 @@ func ThrowPokeballAgain() {
 	Press("x")
 	time.Sleep(500 * time.Millisecond)
 	Press("space")
-	time.Sleep(3000 * time.Millisecond)
+	time.Sleep(2000 * time.Millisecond)
+	Press("z")
+	time.Sleep(200 * time.Millisecond)
+	Press("z")
+	time.Sleep(200 * time.Millisecond)
+	Press("z")
+	time.Sleep(200 * time.Millisecond)
 }
 
 func ExitCapture() {

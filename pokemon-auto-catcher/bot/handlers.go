@@ -44,10 +44,10 @@ func handleWalkingRight(b *Bot) State {
 func handleCheckingConditions(b *Bot) State {
 	fmt.Println("checking conditions")
 
-	//repelOff := checkRepelOff(b)
-	//if repelOff {
-	//return UsingRepel
-	//}
+	repelOff := checkRepelOff(b)
+	if repelOff {
+		return UsingRepel
+	}
 
 	battleStarted := checkBattle(b)
 	if battleStarted {
@@ -86,6 +86,11 @@ func checkBattle(b *Bot) bool {
 func handleUsingRepel(b *Bot) State {
 	fmt.Println("using repel")
 
+	b.RepelsUsed++
+	if b.RepelsUsed > 2 {
+		return ResetingGame
+	}
+
 	actions.UseRepel()
 
 	return WalkingLeft
@@ -97,10 +102,23 @@ func handleBattling(b *Bot) State {
 	time.Sleep(500 * time.Millisecond)
 	actions.Press("x")
 	time.Sleep(100 * time.Millisecond)
-	if checkDesiredPokemon(b) {
-		return Capturing
+	//if checkDesiredPokemon(b) && checkAchievmentPopup(b) {
+	if checkAchievmentPopup(b) {
+		return AchievmentEnabled
 	}
 	return RunningAway
+}
+
+func checkAchievmentPopup(b *Bot) bool {
+	fmt.Println("checking achievment")
+
+	// return true if the popup shows (the check will be false)
+	return !checkImage(b.Config.AchievmentReferenceImaeRectangle, "achievment_reference.png")
+}
+
+func handleAchievmentEnabled(b *Bot) State {
+	b.Stop = true
+	return AchievmentEnabled
 }
 
 func handleCapturing(b *Bot) State {
@@ -144,22 +162,23 @@ func handleResetingGame(b *Bot) State {
 
 	actions.ResetGame()
 
+	b.RepelsUsed = 0
+
 	return CheckingConditions
 }
 
-func checkDesiredPokemon(b *Bot) bool {
-	fmt.Println("checking pokemon")
-	robotgo.Move(
-		b.Config.PokemonReferenceImageRectangle.Min.X,
-		b.Config.PokemonReferenceImageRectangle.Min.Y,
-	)
-	time.Sleep(time.Second)
-	robotgo.Move(
-		b.Config.PokemonReferenceImageRectangle.Max.X,
-		b.Config.PokemonReferenceImageRectangle.Max.Y,
-	)
-	time.Sleep(time.Second)
-	file, err := os.Open("images/pokemon_reference.png")
+func checkImage(currentRectangle image.Rectangle, referenceImageName string) bool {
+	//robotgo.Move(
+	//currentRectangle.Min.X,
+	//currentRectangle.Min.Y,
+	//)
+	//time.Sleep(time.Second)
+	//robotgo.Move(
+	//currentRectangle.Max.X,
+	//currentRectangle.Max.Y,
+	//)
+	//time.Sleep(time.Second)
+	file, err := os.Open(fmt.Sprintf("images/%s", referenceImageName))
 	if err != nil {
 		panic(err)
 	}
@@ -170,12 +189,12 @@ func checkDesiredPokemon(b *Bot) bool {
 		panic(err)
 	}
 
-	currentImage, err := screenshot.CaptureRect(b.Config.PokemonReferenceImageRectangle)
+	currentImage, err := screenshot.CaptureRect(currentRectangle)
 	if err != nil {
 		panic(err)
 	}
 
-	currentPokemonReference := "images/current_pokemon_reference.png"
+	currentPokemonReference := "images/current_reference.png"
 	currentPokemonFile, err := os.Create(currentPokemonReference)
 	if err != nil {
 		panic(err)
@@ -195,29 +214,16 @@ func checkDesiredPokemon(b *Bot) bool {
 	return isSimilar
 }
 
+func checkDesiredPokemon(b *Bot) bool {
+	fmt.Println("checking pokemon")
+
+	return checkImage(b.Config.PokemonReferenceImageRectangle, "pokemon_reference.png")
+}
+
 func checkRepelOff(b *Bot) bool {
-	file, err := os.Open("images/repel_off.png")
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
+	fmt.Println("checking repel")
 
-	savedImage, err := png.Decode(file)
-	if err != nil {
-		panic(err)
-	}
-
-	currentImage, err := screenshot.CaptureRect(b.Config.RepelImageRectangle)
-	if err != nil {
-		panic(err)
-	}
-
-	isSimilar, err := compareImages(savedImage, currentImage)
-	if err != nil {
-		panic(err)
-	}
-
-	return isSimilar
+	return checkImage(b.Config.RepelImageRectangle, "repel_off.png")
 }
 
 func compareImages(img1, img2 image.Image) (bool, error) {

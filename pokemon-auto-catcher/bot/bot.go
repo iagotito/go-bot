@@ -23,6 +23,7 @@ const (
 	ThrowingPokeballAgain
 	RunningAway
 	ResetingGame
+	AchievmentEnabled
 )
 
 type StateHandler func(b *Bot) State
@@ -38,6 +39,7 @@ var stateHandlers = map[State]StateHandler{
 	RunningAway:           handleRunningAway,
 	ResetingGame:          handleResetingGame,
 	ThrowingPokeballAgain: handleThrowingPokeballAgain,
+	AchievmentEnabled:     handleAchievmentEnabled,
 }
 
 type Bot struct {
@@ -46,6 +48,7 @@ type Bot struct {
 	Stop             bool
 	Config           config.Config
 	NextWalkingState State
+	RepelsUsed       int
 }
 
 func NewBot() *Bot {
@@ -55,6 +58,7 @@ func NewBot() *Bot {
 		Stop:             false,
 		Config:           config.NewConfig(),
 		NextWalkingState: WalkingLeft,
+		RepelsUsed:       0,
 	}
 }
 
@@ -64,6 +68,7 @@ func (b *Bot) Configure() {
 	fmt.Println("2. Repel off message rectangle")
 	fmt.Println("3. No battle reference image rectangle")
 	fmt.Println("4. Pokémon reference image rectangle")
+	fmt.Println("5. Achievment reference image rectangle")
 
 	var input string
 	_, err := fmt.Scanln(&input)
@@ -80,6 +85,8 @@ func (b *Bot) Configure() {
 		b.Config.ConfigNoBattleReferenceImage()
 	case "4":
 		b.Config.ConfigPokemonReferenceImage()
+	case "5":
+		b.Config.ConfigAchievmentPopupImage()
 	default:
 		fmt.Println("Invalid option")
 	}
