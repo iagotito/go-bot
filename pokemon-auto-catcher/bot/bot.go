@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/go-vgo/robotgo"
 	"github.com/iagotito/go-bot/pokemon-auto-catcher/config"
 	gohook "github.com/robotn/gohook"
 )
@@ -16,6 +17,7 @@ const (
 	WalkingLeft
 	WalkingRight
 	CheckingConditions
+	UsingRepel
 )
 
 type StateHandler func(b *Bot) State
@@ -24,22 +26,25 @@ var stateHandlers = map[State]StateHandler{
 	ClickingGameWindow: handleClickingGameWindow,
 	WalkingLeft:        handleWalkingLeft,
 	WalkingRight:       handleWalkingRight,
-	//CheckingConditions: handleCheckingConditions,
+	CheckingConditions: handleCheckingConditions,
+	UsingRepel:         handleUsingRepel,
 }
 
 type Bot struct {
-	CurrentState State
-	DefaultDelay time.Duration
-	Stop         bool
-	Config       config.Config
+	CurrentState     State
+	DefaultDelay     time.Duration
+	Stop             bool
+	Config           config.Config
+	NextWalkingState State
 }
 
 func NewBot() *Bot {
 	return &Bot{
-		CurrentState: ClickingGameWindow,
-		DefaultDelay: 100 * time.Millisecond,
-		Stop:         false,
-		Config:       config.NewConfig(),
+		CurrentState:     ClickingGameWindow,
+		DefaultDelay:     100 * time.Millisecond,
+		Stop:             false,
+		Config:           config.NewConfig(),
+		NextWalkingState: WalkingLeft,
 	}
 }
 
@@ -79,12 +84,15 @@ func (b *Bot) Run() {
 
 	for {
 		if b.Stop {
+			robotgo.KeyDown("space")
+			time.Sleep(100 * time.Millisecond)
+			robotgo.KeyUp("space")
 			break
 		}
 		handler, _ := stateHandlers[b.CurrentState]
 
 		b.CurrentState = handler(b)
 
-		time.Sleep(time.Second)
+		time.Sleep(50 * time.Millisecond)
 	}
 }
