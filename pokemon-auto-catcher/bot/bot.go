@@ -18,16 +18,26 @@ const (
 	WalkingRight
 	CheckingConditions
 	UsingRepel
+	Battling
+	Capturing
+	ThrowingPokeballAgain
+	RunningAway
+	ResetingGame
 )
 
 type StateHandler func(b *Bot) State
 
 var stateHandlers = map[State]StateHandler{
-	ClickingGameWindow: handleClickingGameWindow,
-	WalkingLeft:        handleWalkingLeft,
-	WalkingRight:       handleWalkingRight,
-	CheckingConditions: handleCheckingConditions,
-	UsingRepel:         handleUsingRepel,
+	ClickingGameWindow:    handleClickingGameWindow,
+	WalkingLeft:           handleWalkingLeft,
+	WalkingRight:          handleWalkingRight,
+	CheckingConditions:    handleCheckingConditions,
+	UsingRepel:            handleUsingRepel,
+	Battling:              handleBattling,
+	Capturing:             handleCapturing,
+	RunningAway:           handleRunningAway,
+	ResetingGame:          handleResetingGame,
+	ThrowingPokeballAgain: handleThrowingPokeballAgain,
 }
 
 type Bot struct {
@@ -52,6 +62,8 @@ func (b *Bot) Configure() {
 	fmt.Println("What do you want to configure?")
 	fmt.Println("1. Game window position")
 	fmt.Println("2. Repel off message rectangle")
+	fmt.Println("3. No battle reference image rectangle")
+	fmt.Println("4. Pokémon reference image rectangle")
 
 	var input string
 	_, err := fmt.Scanln(&input)
@@ -64,6 +76,10 @@ func (b *Bot) Configure() {
 		b.Config.ConfigGameWindowPos()
 	case "2":
 		b.Config.ConfigRepelOffImage()
+	case "3":
+		b.Config.ConfigNoBattleReferenceImage()
+	case "4":
+		b.Config.ConfigPokemonReferenceImage()
 	default:
 		fmt.Println("Invalid option")
 	}
@@ -91,6 +107,7 @@ func (b *Bot) Run() {
 		}
 		handler, _ := stateHandlers[b.CurrentState]
 
+		fmt.Println()
 		b.CurrentState = handler(b)
 
 		time.Sleep(50 * time.Millisecond)

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/go-vgo/robotgo"
+	"github.com/iagotito/go-bot/pokemon-auto-catcher/actions"
 	"github.com/kbinani/screenshot"
 )
 
@@ -24,18 +25,18 @@ func handleClickingGameWindow(b *Bot) State {
 
 func handleWalkingLeft(b *Bot) State {
 	fmt.Println("walking left")
-	robotgo.KeyDown("left")
-	time.Sleep(75 * time.Millisecond)
-	robotgo.KeyUp("left")
+
+	actions.WalkLeft()
+
 	b.NextWalkingState = WalkingRight
 	return CheckingConditions
 }
 
 func handleWalkingRight(b *Bot) State {
 	fmt.Println("walking right")
-	robotgo.KeyDown("right")
-	time.Sleep(75 * time.Millisecond)
-	robotgo.KeyUp("right")
+
+	actions.WalkRight()
+
 	b.NextWalkingState = WalkingLeft
 	return CheckingConditions
 }
@@ -43,110 +44,155 @@ func handleWalkingRight(b *Bot) State {
 func handleCheckingConditions(b *Bot) State {
 	fmt.Println("checking conditions")
 
-	repelOff := checkRepelOff(b)
-	if repelOff {
-		return UsingRepel
+	//repelOff := checkRepelOff(b)
+	//if repelOff {
+	//return UsingRepel
+	//}
+
+	battleStarted := checkBattle(b)
+	if battleStarted {
+		return Battling
 	}
 
 	return b.NextWalkingState
 }
 
-func handleUsingRepel(b *Bot) State {
-	robotgo.KeyDown("space")
-	time.Sleep(100 * time.Millisecond)
-	robotgo.KeyUp("space")
+func checkBattle(b *Bot) bool {
+	fmt.Println("checking battle")
+	file, err := os.Open("images/no_battle_reference.png")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
 
+	savedImage, err := png.Decode(file)
+	if err != nil {
+		panic(err)
+	}
+
+	currentImage, err := screenshot.CaptureRect(b.Config.NoBattleReferenceImageRectangle)
+	if err != nil {
+		panic(err)
+	}
+
+	isSimilar, err := compareImages(savedImage, currentImage)
+	if err != nil {
+		panic(err)
+	}
+
+	return !isSimilar
+}
+
+func handleUsingRepel(b *Bot) State {
 	fmt.Println("using repel")
 
-	fmt.Println("pressing x")
-	robotgo.KeyDown("x")
-	time.Sleep(100 * time.Millisecond)
-	robotgo.KeyUp("x")
-
-	time.Sleep(500 * time.Millisecond)
-
-	fmt.Println("pressing enter")
-	robotgo.KeyDown("enter")
-	time.Sleep(100 * time.Millisecond)
-	robotgo.KeyUp("enter")
-
-	time.Sleep(500 * time.Millisecond)
-
-	fmt.Println("pressing up")
-	robotgo.KeyDown("up")
-	time.Sleep(100 * time.Millisecond)
-	robotgo.KeyUp("up")
-
-	time.Sleep(500 * time.Millisecond)
-
-	fmt.Println("pressing up")
-	robotgo.KeyDown("up")
-	time.Sleep(100 * time.Millisecond)
-	robotgo.KeyUp("up")
-
-	time.Sleep(500 * time.Millisecond)
-
-	fmt.Println("pressing down")
-	robotgo.KeyDown("down")
-	time.Sleep(100 * time.Millisecond)
-	robotgo.KeyUp("down")
-
-	time.Sleep(500 * time.Millisecond)
-
-	fmt.Println("pressing down")
-	robotgo.KeyDown("down")
-	time.Sleep(100 * time.Millisecond)
-	robotgo.KeyUp("down")
-
-	time.Sleep(500 * time.Millisecond)
-
-	fmt.Println("pressing x")
-	robotgo.KeyDown("x")
-	time.Sleep(100 * time.Millisecond)
-	robotgo.KeyUp("x")
-
-	time.Sleep(1000 * time.Millisecond)
-
-	fmt.Println("pressing x")
-	robotgo.KeyDown("x")
-	time.Sleep(100 * time.Millisecond)
-	robotgo.KeyUp("x")
-
-	time.Sleep(1000 * time.Millisecond)
-
-	fmt.Println("pressing x")
-	robotgo.KeyDown("x")
-	time.Sleep(100 * time.Millisecond)
-	robotgo.KeyUp("x")
-
-	time.Sleep(1000 * time.Millisecond)
-
-	fmt.Println("pressing x")
-	robotgo.KeyDown("x")
-	time.Sleep(100 * time.Millisecond)
-	robotgo.KeyUp("x")
-
-	time.Sleep(1000 * time.Millisecond)
-
-	fmt.Println("pressing z")
-	robotgo.KeyDown("z")
-	time.Sleep(100 * time.Millisecond)
-	robotgo.KeyUp("z")
-
-	time.Sleep(1000 * time.Millisecond)
-
-	fmt.Println("pressing z")
-	robotgo.KeyDown("z")
-	time.Sleep(100 * time.Millisecond)
-	robotgo.KeyUp("z")
-
-	time.Sleep(1000 * time.Millisecond)
-
-	robotgo.KeyDown("space")
-	time.Sleep(100 * time.Millisecond)
-	robotgo.KeyUp("space")
+	actions.UseRepel()
 
 	return WalkingLeft
+}
+
+func handleBattling(b *Bot) State {
+	fmt.Println("battling")
+
+	time.Sleep(500 * time.Millisecond)
+	actions.Press("x")
+	time.Sleep(100 * time.Millisecond)
+	if checkDesiredPokemon(b) {
+		return Capturing
+	}
+	return RunningAway
+}
+
+func handleCapturing(b *Bot) State {
+	fmt.Println("capturing")
+
+	actions.ThrowPokeball()
+
+	if !checkDesiredPokemon(b) {
+		actions.ExitCapture()
+		return ResetingGame
+	}
+
+	return ThrowingPokeballAgain
+}
+
+func handleThrowingPokeballAgain(b *Bot) State {
+	fmt.Println("throwing pokeball again")
+
+	actions.ThrowPokeballAgain()
+
+	// if the pokemon image is not the desired, it means the pokemon was captured
+	time.Sleep(time.Second)
+	if !checkDesiredPokemon(b) {
+		actions.ExitCapture()
+		return ResetingGame
+	}
+
+	return ThrowingPokeballAgain
+}
+
+func handleRunningAway(b *Bot) State {
+	fmt.Println("running away")
+
+	actions.RunAway()
+
+	return CheckingConditions
+}
+
+func handleResetingGame(b *Bot) State {
+	fmt.Println("reseting")
+
+	actions.ResetGame()
+
+	return CheckingConditions
+}
+
+func checkDesiredPokemon(b *Bot) bool {
+	fmt.Println("checking pokemon")
+	robotgo.Move(
+		b.Config.PokemonReferenceImageRectangle.Min.X,
+		b.Config.PokemonReferenceImageRectangle.Min.Y,
+	)
+	time.Sleep(time.Second)
+	robotgo.Move(
+		b.Config.PokemonReferenceImageRectangle.Max.X,
+		b.Config.PokemonReferenceImageRectangle.Max.Y,
+	)
+	time.Sleep(time.Second)
+	file, err := os.Open("images/pokemon_reference.png")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	savedImage, err := png.Decode(file)
+	if err != nil {
+		panic(err)
+	}
+
+	currentImage, err := screenshot.CaptureRect(b.Config.PokemonReferenceImageRectangle)
+	if err != nil {
+		panic(err)
+	}
+
+	currentPokemonReference := "images/current_pokemon_reference.png"
+	currentPokemonFile, err := os.Create(currentPokemonReference)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	err = png.Encode(currentPokemonFile, currentImage)
+	if err != nil {
+		panic(err)
+	}
+
+	isSimilar, err := compareImages(savedImage, currentImage)
+	if err != nil {
+		panic(err)
+	}
+
+	return isSimilar
 }
 
 func checkRepelOff(b *Bot) bool {

@@ -17,9 +17,11 @@ type ScreenPosition struct {
 }
 
 type Config struct {
-	ConfigFileName      string
-	GameWindowPosition  ScreenPosition
-	RepelImageRectangle image.Rectangle
+	ConfigFileName                  string
+	GameWindowPosition              ScreenPosition
+	RepelImageRectangle             image.Rectangle
+	NoBattleReferenceImageRectangle image.Rectangle
+	PokemonReferenceImageRectangle  image.Rectangle
 }
 
 func NewConfig() Config {
@@ -80,7 +82,62 @@ func (c *Config) ConfigRepelOffImage() {
 
 	c.writeToFile()
 
-	c.saveRepelScreenshot()
+	c.saveImage("repel_off.png", c.RepelImageRectangle)
+}
+
+func (c *Config) ConfigNoBattleReferenceImage() {
+	fmt.Println("Click on the upper left corner of the no battle reference image")
+	upperLeftCorner := GetClickPosition()
+
+	fmt.Println("Click on the bottom right corner of the no battle reference image")
+	bottomRightCorner := GetClickPosition()
+
+	c.NoBattleReferenceImageRectangle = image.Rectangle{
+		Min: image.Point{X: upperLeftCorner.X, Y: upperLeftCorner.Y},
+		Max: image.Point{X: bottomRightCorner.X, Y: bottomRightCorner.Y},
+	}
+
+	c.writeToFile()
+
+	c.saveImage("no_battle_reference.png", c.NoBattleReferenceImageRectangle)
+}
+
+func (c *Config) ConfigPokemonReferenceImage() {
+	fmt.Println("Click on the upper left corner of the pokemon reference image")
+	upperLeftCorner := GetClickPosition()
+
+	fmt.Println("Click on the bottom right corner of the pokemon reference image")
+	bottomRightCorner := GetClickPosition()
+
+	c.PokemonReferenceImageRectangle = image.Rectangle{
+		Min: image.Point{X: upperLeftCorner.X, Y: upperLeftCorner.Y},
+		Max: image.Point{X: bottomRightCorner.X, Y: bottomRightCorner.Y},
+	}
+
+	c.writeToFile()
+
+	c.saveImage("pokemon_reference.png", c.PokemonReferenceImageRectangle)
+}
+
+func (c *Config) saveImage(filename string, rec image.Rectangle) {
+	img, err := screenshot.CaptureRect(rec)
+	if err != nil {
+		panic(err)
+	}
+
+	filepath := fmt.Sprintf("images/%s", filename)
+	file, err := os.Create(filepath)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	err = png.Encode(file, img)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("%s saved\n", filename)
 }
 
 func GetClickPosition() ScreenPosition {
@@ -98,23 +155,4 @@ func GetClickPosition() ScreenPosition {
 	}
 
 	return position
-}
-
-func (c *Config) saveRepelScreenshot() {
-	repelOffImage, err := screenshot.CaptureRect(c.RepelImageRectangle)
-	if err != nil {
-		panic(err)
-	}
-	fileName := "images/repel_off.png"
-
-	file, err := os.Create(fileName)
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-
-	err = png.Encode(file, repelOffImage)
-	if err != nil {
-		panic(err)
-	}
 }
